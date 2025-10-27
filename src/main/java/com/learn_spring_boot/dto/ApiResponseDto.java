@@ -4,11 +4,5 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
-@AllArgsConstructor
-@Data
 @Builder
-public class ApiResponseDto <T> {
-    private String status;
-    private String message;
-    private T response;
-}
+public record ApiResponseDto <T>(String status,String message,T response) {}
