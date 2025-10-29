@@ -59,6 +59,18 @@ public class GlobalExceptionHandler {
                                 .build()
                 );
     }
+
+    @ExceptionHandler(value = ResourceNotFoundException.class)
+    public ResponseEntity<ApiResponseDto<?>> ResourceNotFoundExceptionHandler(ResourceNotFoundException exception) {
+    return ResponseEntity
+        .status(HttpStatus.NOT_FOUND)
+        .body(
+            ApiResponseDto.builder()
+                .status(String.valueOf(HttpStatus.NOT_FOUND))
+                .message(exception.getMessage())
+                .build()
+        );
+    }
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, Object>> handleInvalidJson(HttpMessageNotReadableException ex, HttpServletRequest request) {
         Map<String, Object> body = new HashMap<>();

@@ -2,7 +2,6 @@ package com.learn_spring_boot.service;
 
 import com.learn_spring_boot.dto.ApiResponseDto;
 import com.learn_spring_boot.dto.SignInRequestDto;
-import com.learn_spring_boot.dto.SignInResponseDto;
 import com.learn_spring_boot.dto.SignUpRequestDto;
 import com.learn_spring_boot.exception.RoleNotFoundException;
 import com.learn_spring_boot.exception.UserAlreadyExistsException;
