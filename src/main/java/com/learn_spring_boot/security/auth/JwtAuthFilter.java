@@ -30,6 +30,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
         throws ServletException, IOException{
         try {
+            System.out.println("🔍 JWT Filter triggered");
+
             String jwt=parseJwt(request);
             if(jwt!=null&&jwtUtils.validateJwtToken(jwt)){
                 String username=jwtUtils.getUsernameFromJwtToken(jwt);

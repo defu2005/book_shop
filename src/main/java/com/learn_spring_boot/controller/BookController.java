@@ -67,4 +67,22 @@ public class BookController {
                 .message("Book deleted")
                 .build());
     }
+
+    @PostMapping("/{id}/restore")
+    public ResponseEntity<ApiResponseDto<?>> restore(@PathVariable long id) {
+        bookService.restore(id);
+        return ResponseEntity.ok(ApiResponseDto.builder()
+                .status(String.valueOf(HttpStatus.OK))
+                .message("Book restored")
+                .build());
+    }
+
+    @DeleteMapping("/{id}/force")
+    public ResponseEntity<ApiResponseDto<?>> forceDelete(@PathVariable long id) {
+        bookService.forceDelete(id);
+        return ResponseEntity.ok(ApiResponseDto.builder()
+                .status(String.valueOf(HttpStatus.OK))
+                .message("Book permanently deleted")
+                .build());
+    }
 }

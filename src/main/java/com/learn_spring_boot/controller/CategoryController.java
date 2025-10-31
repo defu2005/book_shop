@@ -61,10 +61,32 @@ public class CategoryController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponseDto<?>> delete(@PathVariable int id) {
-        categoryService.delete(id);
+        int cascaded = categoryService.delete(id);
+        String message = "Category deleted";
+        if (cascaded > 0) {
+            message += ". Warning: " + cascaded + " related books were also soft-deleted.";
+        }
         return ResponseEntity.ok(ApiResponseDto.builder()
                 .status(String.valueOf(HttpStatus.OK))
-                .message("Category deleted")
+                .message(message)
+                .build());
+    }
+
+    @PostMapping("/{id}/restore")
+    public ResponseEntity<ApiResponseDto<?>> restore(@PathVariable int id) {
+        categoryService.restore(id);
+        return ResponseEntity.ok(ApiResponseDto.builder()
+                .status(String.valueOf(HttpStatus.OK))
+                .message("Category restored")
+                .build());
+    }
+
+    @DeleteMapping("/{id}/force")
+    public ResponseEntity<ApiResponseDto<?>> forceDelete(@PathVariable int id) {
+        categoryService.forceDelete(id);
+        return ResponseEntity.ok(ApiResponseDto.builder()
+                .status(String.valueOf(HttpStatus.OK))
+                .message("Category permanently deleted")
                 .build());
     }
 }

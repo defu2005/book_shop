@@ -10,5 +10,11 @@ public interface AuthorService {
     AuthorResponseDto getById(int id);
     AuthorResponseDto create(AuthorRequestDto dto);
     AuthorResponseDto update(int id, AuthorRequestDto dto);
-    void delete(int id);
+    /**
+     * Soft-delete the author and cascade soft-delete to related books.
+     * @return number of related books that were soft-deleted
+     */
+    int delete(int id);
+    void restore(int id);
+    void forceDelete(int id);
 }

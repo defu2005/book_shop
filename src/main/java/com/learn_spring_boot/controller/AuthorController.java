@@ -61,10 +61,32 @@ public class AuthorController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponseDto<?>> delete(@PathVariable int id) {
-        authorService.delete(id);
+        int cascaded = authorService.delete(id);
+        String message = "Author deleted";
+        if (cascaded > 0) {
+            message += ". Warning: " + cascaded + " related books were also soft-deleted.";
+        }
         return ResponseEntity.ok(ApiResponseDto.builder()
                 .status(String.valueOf(HttpStatus.OK))
-                .message("Author deleted")
+                .message(message)
+                .build());
+    }
+
+    @PostMapping("/{id}/restore")
+    public ResponseEntity<ApiResponseDto<?>> restore(@PathVariable int id) {
+        authorService.restore(id);
+        return ResponseEntity.ok(ApiResponseDto.builder()
+                .status(String.valueOf(HttpStatus.OK))
+                .message("Author restored")
+                .build());
+    }
+
+    @DeleteMapping("/{id}/force")
+    public ResponseEntity<ApiResponseDto<?>> forceDelete(@PathVariable int id) {
+        authorService.forceDelete(id);
+        return ResponseEntity.ok(ApiResponseDto.builder()
+                .status(String.valueOf(HttpStatus.OK))
+                .message("Author permanently deleted")
                 .build());
     }
 }

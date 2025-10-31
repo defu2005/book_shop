@@ -13,11 +13,14 @@ import com.learn_spring_boot.repository.CategoryRepository;
 import com.learn_spring_boot.service.BookService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
+import java.time.Instant;
 import java.util.Set;
 import java.util.stream.Collectors;
+import com.learn_spring_boot.util.SecurityUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -42,9 +45,10 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
+    @Transactional
     public BookResponseDto create(BookRequestDto dto) {
-    Author author = authorRepository.findById(dto.authorId())
-        .orElseThrow(() -> new ResourceNotFoundException("Author not found with id=" + dto.authorId()));
+        Author author = authorRepository.findById(dto.authorId())
+            .orElseThrow(() -> new ResourceNotFoundException("Author not found with id=" + dto.authorId()));
 
         Set<Category> categories = new HashSet<>();
         if (dto.categoryIds() != null && !dto.categoryIds().isEmpty()) {
@@ -63,10 +67,11 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
+    @Transactional
     public BookResponseDto update(long id, BookRequestDto dto) {
     Book existing = bookRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Book not found with id=" + id));
-        
+
         if (dto.name() != null) existing.setName(dto.name());
         if (dto.quantity() != null) existing.setQuantity(dto.quantity());
         if (dto.price() != null) existing.setPrice(dto.price());
@@ -76,7 +81,7 @@ public class BookServiceImpl implements BookService {
             .orElseThrow(() -> new ResourceNotFoundException("Author not found with id=" + dto.authorId()));
             existing.setAuthor(author);
         }
-
+        
         if (dto.categoryIds() != null) {
             Set<Category> categories = new HashSet<>();
             categoryRepository.findAllById(dto.categoryIds()).forEach(categories::add);
@@ -88,7 +93,30 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
+    @Transactional
     public void delete(long id) {
-        bookRepository.deleteById(id);
+        Book existing = bookRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Book not found with id=" + id));
+        existing.setDeletedAt(Instant.now());
+        existing.setDeletedBy(SecurityUtils.currentUsername());
+        bookRepository.save(existing);
+    }
+
+    @Override
+    @Transactional
+    public void restore(long id) {
+        Book existing = bookRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Book not found with id=" + id));
+        existing.setDeletedAt(null);
+        existing.setDeletedBy(null);
+        bookRepository.save(existing);
+    }
+
+    @Override
+    @Transactional
+    public void forceDelete(long id) {
+        Book existing = bookRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Book not found with id=" + id));
+        bookRepository.delete(existing);
     }
 }

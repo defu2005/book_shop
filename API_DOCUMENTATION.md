@@ -1,6 +1,8 @@
 # Tài liệu API — Learn Spring Boot
 
-Tài liệu này mô tả các endpoint CRUD cho Author, Category và Book.
+# Tài liệu API — Learn Spring Boot
+
+Tài liệu này mô tả các endpoint CRUD cho Author, Category và Book và các thay đổi liên quan đến soft-delete / restore / force-delete.
 
 Base path: `/api`
 
@@ -8,6 +10,12 @@ Tất cả endpoint trả về wrapper chung `ApiResponseDto<T>`:
 - `status`: String (ví dụ "200 OK")
 - `message`: String
 - `response`: Dữ liệu thực tế (T)
+
+Lưu ý quan trọng (soft-delete)
+- Mọi entity giờ kế thừa `BaseEntity` có các trường audit: `createdAt`, `updatedAt`, `deletedAt`, `createdBy`, `updatedBy`, `deletedBy`.
+- Thao tác xoá mặc định là soft-delete: thay vì xóa cứng, hệ thống sẽ set `deletedAt` và `deletedBy`.
+- Ứng dụng ẩn các bản ghi đã soft-deleted bằng repository base / (và một số entity sử dụng `@Where`) nên chúng không xuất hiện trong kết quả `findAll`/`findById` thông thường.
+- Khi xóa một parent (Author hoặc Category) hệ thống sẽ cascade soft-delete các Book liên quan (để tránh trường hợp child hiển thị mà parent đã ẩn). Controller trả về cảnh báo nếu có book bị cascade soft-deleted.
 
 ## DTO (tóm tắt)
 
@@ -50,13 +58,12 @@ Tất cả endpoint trả về wrapper chung `ApiResponseDto<T>`:
 ## Endpoints — Author
 
 ### GET /api/authors
-- Mô tả: Lấy danh sách tất cả tác giả.
+- Mô tả: Lấy danh sách tất cả tác giả (không bao gồm tác giả đã soft-deleted).
 - Response 200: `ApiResponseDto.response` = `List<AuthorResponseDto>`
 
 ### GET /api/authors/{id}
-- Mô tả: Lấy tác giả theo id.
+- Mô tả: Lấy tác giả theo id (404 nếu tác giả không tồn tại hoặc đã bị soft-deleted).
 - Response 200: `ApiResponseDto.response` = `AuthorResponseDto`
-- Error 404 nếu không tìm thấy.
 
 ### POST /api/authors
 - Mô tả: Tạo tác giả mới.
@@ -79,17 +86,36 @@ Tất cả endpoint trả về wrapper chung `ApiResponseDto<T>`:
 - Error 404: nếu id không tồn tại
 
 ### DELETE /api/authors/{id}
-- Mô tả: Xoá tác giả.
-- Response 200: message xác nhận
+- Mô tả: Soft-delete tác giả. Hệ thống sẽ cascade soft-delete các `Book` có `author` là tác giả này.
+- Response 200: message xác nhận.
+  - Nếu có sách bị cascade soft-deleted, message sẽ có warning: e.g. "Author deleted. Warning: 3 related books were also soft-deleted."
 - Error 404: nếu id không tồn tại
+
+### POST /api/authors/{id}/restore
+- Mô tả: Restore tác giả (set `deletedAt`/`deletedBy` = null) và restore các `Book` liên quan.
+- Response 200: message xác nhận
+
+### DELETE /api/authors/{id}/force
+- Mô tả: Force delete (xóa cứng) tác giả và xóa cứng các `Book` liên quan trước để tránh vi phạm FK.
+- Response 200: message xác nhận
 
 ---
 
 ## Endpoints — Category
 
-Tương tự Author, đường dẫn base: `/api/categories`
+Đường dẫn base: `/api/categories` — tương tự Author, nhưng cascade soft-delete áp dụng cho `Book` có `categories` chứa category đó.
 
-Ví dụ POST body:
+### DELETE /api/categories/{id}
+- Mô tả: Soft-delete category; cascade soft-delete các sách liên quan.
+- Response 200: message xác nhận. Nếu cascade xảy ra message sẽ chứa warning với số sách liên quan bị soft-deleted.
+
+### POST /api/categories/{id}/restore
+- Mô tả: Restore category và restore các sách liên quan.
+
+### DELETE /api/categories/{id}/force
+- Mô tả: Force delete category và xóa cứng sách liên quan trước.
+
+Ví dụ POST body (create category):
 
 ```json
 {
@@ -102,13 +128,13 @@ Ví dụ POST body:
 ## Endpoints — Book
 
 ### GET /api/books
-- Mô tả: Lấy danh sách sách (kèm author & categories).
+- Mô tả: Lấy danh sách sách (kèm author & categories). Soft-deleted books sẽ không xuất hiện.
 - Response 200: `List<BookResponseDto>`
 
 ### GET /api/books/{id}
 - Mô tả: Lấy sách theo id.
 - Response 200: `BookResponseDto`
-- Error 404 nếu không tìm thấy.
+- Error 404 nếu không tìm thấy (hoặc sách đã bị soft-deleted).
 
 ### POST /api/books
 - Mô tả: Tạo sách mới.
@@ -143,9 +169,15 @@ Ví dụ POST body:
 - Error 404: nếu book/author/category không tồn tại
 
 ### DELETE /api/books/{id}
-- Mô tả: Xoá sách.
+- Mô tả: Soft-delete sách (set `deletedAt`/`deletedBy`).
 - Response 200: message xác nhận
 - Error 404: nếu id không tồn tại
+
+### POST /api/books/{id}/restore
+- Mô tả: Restore sách (set `deletedAt`/`deletedBy` = null).
+
+### DELETE /api/books/{id}/force
+- Mô tả: Force delete (xóa cứng) sách.
 
 ---
 
@@ -187,71 +219,80 @@ Invalid JSON (400):
 
 ---
 
+## Implementation notes (technical)
+
+- Soft-delete implementation details:
+  - Entities inherit `BaseEntity` with audit fields mentioned above.
+  - A custom repository base (`SoftDeleteRepository` + `SoftDeleteRepositoryImpl`) filters out soft-deleted rows for common methods like `findAll` and `findById`.
+  - Additionally, several entities use `@Where(clause = "deleted_at IS NULL")` to hide soft-deleted rows by default (Hibernate-specific).
+- Cascade behavior:
+  - Deleting an Author will soft-delete Books with that author (service-layer cascade).
+  - Deleting a Category will soft-delete Books that belong to that category (service-layer cascade).
+  - Restoring a parent will restore related Books.
+  - Force-delete will hard-delete related Books first, then delete the parent to avoid FK constraint issues.
+- Security / auditing:
+  - `createdBy` / `updatedBy` / `deletedBy` are filled from `AuditorAware` using the current authenticated user (or `SYSTEM` if unauthenticated).
+
+---
+
 ## OpenAPI starter snippet (tuỳ chọn)
 
-Bạn có thể dùng đoạn sau làm khởi đầu cho `openapi.yaml`:
+Bạn có thể mở rộng `openapi.yaml` với các endpoint mới, ví dụ:
 
 ```yaml
-openapi: 3.0.3
-info:
-  title: Learn Spring Boot API
-  version: 0.1.0
 paths:
-  /api/authors:
-    get:
-      summary: Get all authors
+  /api/authors/{id}:
+    delete:
+      summary: Soft-delete an author (cascade soft-delete books)
+      parameters:
+        - $ref: '#/components/parameters/id'
       responses:
         '200':
-          description: OK
+          description: Deleted (may include warning about cascaded books)
+  /api/authors/{id}/restore:
     post:
-      summary: Create author
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AuthorRequest'
-      responses:
-        '201': { description: Created }
-  /api/authors/{id}:
-    parameters:
-      - $ref: '#/components/parameters/id'
-    get:
-      summary: Get author by id
-      responses: { '200': { description: OK }, '404': { description: Not Found } }
+      summary: Restore an author and its books
+  /api/authors/{id}/force:
+    delete:
+      summary: Force delete author and its books (hard delete)
+
+  /api/categories/{id}:
+    delete:
+      summary: Soft-delete a category (cascade soft-delete books)
+    post:
+      summary: Restore category and its books
+    delete:
+      summary: Force delete category and its books
+
+  /api/books/{id}:
+    delete:
+      summary: Soft-delete a book
+    post:
+      summary: Restore a book
+    delete:
+      summary: Force delete a book
+
 components:
-  parameters:
-    id:
-      name: id
-      in: path
-      required: true
-      schema:
-        type: integer
   schemas:
-    AuthorRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          maxLength: 256
-          example: "Jane Austen"
-      required: [name]
-    AuthorResponse:
+    # keep existing schemas and add audit fields if you want to expose them in responses
+    BookResponse:
       type: object
       properties:
         id: { type: integer }
         name: { type: string }
-
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        deletedAt: { type: string, format: date-time, nullable: true }
+        createdBy: { type: string }
 ```
 
 ---
 
 ## Gợi ý tiếp theo
 
-- Muốn mình tạo file `src/main/resources/openapi.yaml` từ snippet trên không? Hoặc thêm dependency `org.springdoc:springdoc-openapi-starter-webmvc-ui` để có Swagger UI tự động.
+- Nếu bạn muốn, tôi có thể:
+-  - Tạo file `src/main/resources/openapi.yaml` hoàn chỉnh với tất cả endpoint mới.
+-  - Thêm Swagger UI (`springdoc-openapi`) để xem docs trực tiếp.
+-  - Thêm ví dụ request/response chi tiết cho mỗi endpoint.
 
-Nếu muốn lưu nội dung này vào file khác (ví dụ `docs/API.md`), cho mình biết tên file, mình sẽ di chuyển/đổi tên.
-
----
-
-Tạo bởi automated assistant — file này chứa toàn bộ tài liệu API CRUD cho Author/Category/Book.
+Tạo bởi automated assistant — đã cập nhật để phản ánh soft-delete, cascade và các endpoint restore/force-delete.

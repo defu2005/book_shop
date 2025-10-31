@@ -10,5 +10,11 @@ public interface CategoryService {
     CategoryResponseDto getById(int id);
     CategoryResponseDto create(CategoryRequestDto dto);
     CategoryResponseDto update(int id, CategoryRequestDto dto);
-    void delete(int id);
+    /**
+     * Soft-delete the category and cascade soft-delete to related books.
+     * @return number of related books that were soft-deleted
+     */
+    int delete(int id);
+    void restore(int id);
+    void forceDelete(int id);
 }
