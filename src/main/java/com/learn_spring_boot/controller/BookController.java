@@ -85,4 +85,13 @@ public class BookController {
                 .message("Book permanently deleted")
                 .build());
     }
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponseDto<?>> search(@RequestParam String keyword ){
+
+        List<BookResponseDto> list = bookService.search(keyword);
+        return ResponseEntity.ok(ApiResponseDto.builder()
+                .status(String.valueOf(HttpStatus.OK))
+                .message("Books fetched")
+                .response(list)
+                .build());    }
 }

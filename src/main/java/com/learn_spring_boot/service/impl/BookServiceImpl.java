@@ -39,8 +39,8 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public BookResponseDto getById(long id) {
-    Book book = bookRepository.findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("Book not found with id=" + id));
+        Book book = bookRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Book not found with id=" + id));
         return bookMapper.toDto(book);
     }
 
@@ -48,7 +48,7 @@ public class BookServiceImpl implements BookService {
     @Transactional
     public BookResponseDto create(BookRequestDto dto) {
         Author author = authorRepository.findById(dto.authorId())
-            .orElseThrow(() -> new ResourceNotFoundException("Author not found with id=" + dto.authorId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Author not found with id=" + dto.authorId()));
 
         Set<Category> categories = new HashSet<>();
         if (dto.categoryIds() != null && !dto.categoryIds().isEmpty()) {
@@ -69,19 +69,19 @@ public class BookServiceImpl implements BookService {
     @Override
     @Transactional
     public BookResponseDto update(long id, BookRequestDto dto) {
-    Book existing = bookRepository.findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("Book not found with id=" + id));
+        Book existing = bookRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Book not found with id=" + id));
 
         if (dto.name() != null) existing.setName(dto.name());
         if (dto.quantity() != null) existing.setQuantity(dto.quantity());
         if (dto.price() != null) existing.setPrice(dto.price());
 
         if (dto.authorId() != null) {
-        Author author = authorRepository.findById(dto.authorId())
-            .orElseThrow(() -> new ResourceNotFoundException("Author not found with id=" + dto.authorId()));
+            Author author = authorRepository.findById(dto.authorId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Author not found with id=" + dto.authorId()));
             existing.setAuthor(author);
         }
-        
+
         if (dto.categoryIds() != null) {
             Set<Category> categories = new HashSet<>();
             categoryRepository.findAllById(dto.categoryIds()).forEach(categories::add);
@@ -90,6 +90,14 @@ public class BookServiceImpl implements BookService {
 
         Book saved = bookRepository.save(existing);
         return bookMapper.toDto(saved);
+    }
+
+    @Override
+    @Transactional
+    public List<BookResponseDto> search(String keyword) {
+        return bookRepository.search(keyword).stream()
+                .map(bookMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     @Override

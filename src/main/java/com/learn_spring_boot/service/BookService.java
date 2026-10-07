@@ -10,6 +10,7 @@ public interface BookService {
     BookResponseDto getById(long id);
     BookResponseDto create(BookRequestDto dto);
     BookResponseDto update(long id, BookRequestDto dto);
+    List<BookResponseDto> search(String keyword);
     void delete(long id);
     void restore(long id);
     void forceDelete(long id);

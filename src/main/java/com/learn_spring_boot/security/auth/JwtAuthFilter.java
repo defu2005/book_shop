@@ -17,7 +17,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-@Component
 public class JwtAuthFilter extends OncePerRequestFilter {
     JwtUtils jwtUtils;
     UserDetailsServiceImpl userDetailsServiceImpl;
@@ -48,6 +47,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         catch (Exception e){
             logger.error("Cannot set user authentication: {}",e.getMessage());
         }
+        System.out.println(
+                "URI = " + request.getRequestURI()
+        );
+
+        System.out.println(
+                "AUTH = " +
+                        SecurityContextHolder.getContext().getAuthentication()
+        );
         filterChain.doFilter(request,response);
     }
     private String parseJwt(HttpServletRequest request){
