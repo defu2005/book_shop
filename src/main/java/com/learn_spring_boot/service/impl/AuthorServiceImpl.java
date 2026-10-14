@@ -88,9 +88,11 @@ public class AuthorServiceImpl implements AuthorService {
     @Override
     @Transactional
     public void restore(int id) {
-        Author existing = authorRepository.findById(id)
+        Author existing = authorRepository.findByIdIncludingDeleted(id)
             .orElseThrow(() -> new ResourceNotFoundException("Author not found with id=" + id));
         // restore related books
+        System.out.println(id);
+        System.out.println(existing);
         var books = bookRepository.findAllByAuthor_Id(existing.getId());
         if (books != null && !books.isEmpty()) {
             for (Book b : books) {

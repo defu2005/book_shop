@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 import java.util.Set;
-
 public record SignUpRequestDto(
         @NotBlank(message = "Username is required!")
         @Size(min = 6,message = "Username must have at least 6 characters!")

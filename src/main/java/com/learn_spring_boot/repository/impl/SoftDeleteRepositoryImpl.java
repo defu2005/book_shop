@@ -75,7 +75,10 @@ public class SoftDeleteRepositoryImpl<T, ID extends Serializable> extends Simple
         if (result.isEmpty()) return Optional.empty();
         return Optional.of(result.get(0));
     }
-
+    public Optional<T> findByIdIncludingDeleted(ID id)
+    {
+        return super.findById(id);
+    }
     @Override
     public boolean existsById(ID id) {
         return findById(id).isPresent();

@@ -17,6 +17,7 @@ public record BookRequestDto(
         @PositiveOrZero(message = "Quantity must be greater than or equal to 0")
         Integer quantity,
 
+
         @NotNull(message = "Price is required")
         @PositiveOrZero(message = "Price must be greater than or equal to 0")
         Integer price,

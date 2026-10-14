@@ -22,7 +22,6 @@ import java.util.Set;
                 @UniqueConstraint(columnNames = "email")
         })
 @Builder
-@Where(clause = "deleted_at IS NULL")
 public class User extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

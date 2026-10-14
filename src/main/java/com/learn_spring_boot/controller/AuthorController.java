@@ -74,6 +74,7 @@ public class AuthorController {
 
     @PostMapping("/{id}/restore")
     public ResponseEntity<ApiResponseDto<?>> restore(@PathVariable int id) {
+
         authorService.restore(id);
         return ResponseEntity.ok(ApiResponseDto.builder()
                 .status(String.valueOf(HttpStatus.OK))

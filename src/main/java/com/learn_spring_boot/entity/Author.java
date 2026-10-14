@@ -10,7 +10,6 @@ import org.hibernate.annotations.Where;
 import java.util.Set;
 
 @Entity
-@Where(clause = "deleted_at IS NULL")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor

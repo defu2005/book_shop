@@ -86,7 +86,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public void restore(int id) {
-        Category existing = categoryRepository.findById(id)
+        Category existing = categoryRepository.findByIdIncludingDeleted(id)
             .orElseThrow(() -> new ResourceNotFoundException("Category not found with id=" + id));
         var books = bookRepository.findAllByCategories_Id(existing.getId());
         if (books != null && !books.isEmpty()) {
@@ -113,4 +113,5 @@ public class CategoryServiceImpl implements CategoryService {
         }
         categoryRepository.delete(existing);
     }
+
 }

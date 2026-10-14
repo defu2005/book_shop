@@ -3,13 +3,18 @@ package com.learn_spring_boot.controller;
 import com.learn_spring_boot.dto.ApiResponseDto;
 import com.learn_spring_boot.dto.BookRequestDto;
 import com.learn_spring_boot.dto.BookResponseDto;
+import com.learn_spring_boot.dto.BookSearchRequestDto;
+import com.learn_spring_boot.enums.BookSort;
 import com.learn_spring_boot.service.BookService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.awt.print.Pageable;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -20,8 +25,8 @@ public class BookController {
     private final BookService bookService;
 
     @GetMapping
-    public ResponseEntity<ApiResponseDto<?>> getAll() {
-        List<BookResponseDto> list = bookService.getAll();
+    public ResponseEntity<ApiResponseDto<?>> getBooks(@ModelAttribute BookSearchRequestDto requestDto) {
+        Page<BookResponseDto> list = bookService.getBooks(requestDto);
         return ResponseEntity.ok(ApiResponseDto.builder()
                 .status(String.valueOf(HttpStatus.OK))
                 .message("Books fetched")
@@ -85,13 +90,5 @@ public class BookController {
                 .message("Book permanently deleted")
                 .build());
     }
-    @GetMapping("/search")
-    public ResponseEntity<ApiResponseDto<?>> search(@RequestParam String keyword ){
 
-        List<BookResponseDto> list = bookService.search(keyword);
-        return ResponseEntity.ok(ApiResponseDto.builder()
-                .status(String.valueOf(HttpStatus.OK))
-                .message("Books fetched")
-                .response(list)
-                .build());    }
 }

@@ -13,7 +13,6 @@ import org.hibernate.annotations.Where;
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@Where(clause = "deleted_at IS NULL")
 public class ShippingAddress extends BaseEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

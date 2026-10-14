@@ -13,7 +13,6 @@ import org.hibernate.annotations.Where;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Where(clause = "deleted_at IS NULL")
 @Table(name = "roles")
 public class Role extends BaseEntity {
     @Id

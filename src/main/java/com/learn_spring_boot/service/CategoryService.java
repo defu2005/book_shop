@@ -1,5 +1,6 @@
 package com.learn_spring_boot.service;
 
+import com.learn_spring_boot.dto.BookResponseDto;
 import com.learn_spring_boot.dto.CategoryRequestDto;
 import com.learn_spring_boot.dto.CategoryResponseDto;
 
