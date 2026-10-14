@@ -23,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -139,7 +140,8 @@ public class BookServiceImpl implements BookService {
     public Page<BookResponseDto> getBooks(BookSearchRequestDto dto){
         int page = dto.page() != null ? dto.page() : 0;
         int size = dto.size() != null ? dto.size() : 20;
-        Pageable pageable = PageRequest.of(page, size);
+        Sort sort=getSort(dto.sort());
+        Pageable pageable = PageRequest.of(page, size,sort);
         Specification<Book> spec=Specification.<Book>unrestricted()
                 .and(BookSpecification.hasNameOrAuthorNameContaining(dto.keyword()))
                 .and(BookSpecification.hasAuthor(dto.authorId()))
@@ -148,5 +150,25 @@ public class BookServiceImpl implements BookService {
         Page<Book> books = bookRepository.findAll(spec, pageable);
         Page<BookResponseDto> res=books.map(book->bookMapper.toDto(book));
         return res;
+    }
+    private Sort getSort(BookSort sort){
+        if (sort == null) {
+            return Sort.unsorted();
+        }
+        return switch (sort){
+        case BEST_SELLING ->
+                Sort.by(Sort.Direction.DESC, "sold");
+        case LATEST ->
+                Sort.by(Sort.Direction.DESC, "createdAt");
+        case OLDEST ->
+                Sort.by(Sort.Direction.ASC,"createdAt");
+        case PRICE_ASC ->
+                Sort.by(Sort.Direction.ASC, "price");
+
+        case PRICE_DESC ->
+                Sort.by(Sort.Direction.DESC, "price");
+
+
+    };
     }
 }

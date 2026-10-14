@@ -22,6 +22,7 @@ public class Book extends BaseEntity {
     private String name;
     private Integer quantity;
     private Integer price;
+    private Integer sold;
     @ManyToOne
     private Author author;
     @ManyToMany(fetch = FetchType.LAZY)
