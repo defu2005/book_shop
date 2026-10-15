@@ -2,6 +2,7 @@ package com.learn_spring_boot.security.auth;
 
 import com.learn_spring_boot.entity.User;
 import com.learn_spring_boot.repository.UserRepository;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

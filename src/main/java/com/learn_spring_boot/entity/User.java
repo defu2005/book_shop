@@ -39,4 +39,7 @@ public class User extends BaseEntity {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @Builder.Default
     private Set<Order> orders = new HashSet<>();
+    @OneToOne(cascade = CascadeType.ALL,orphanRemoval = true,optional = false)
+    @JoinColumn(name = "cart_id",nullable = false,unique = true)
+    private Cart cart;
 }

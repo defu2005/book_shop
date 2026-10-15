@@ -4,6 +4,7 @@ import com.learn_spring_boot.dto.ApiResponseDto;
 import com.learn_spring_boot.dto.SignInRequestDto;
 import com.learn_spring_boot.dto.SignInResponseDto;
 import com.learn_spring_boot.dto.SignUpRequestDto;
+import com.learn_spring_boot.entity.Cart;
 import com.learn_spring_boot.entity.Role;
 import com.learn_spring_boot.entity.User;
 import com.learn_spring_boot.exception.RoleNotFoundException;
@@ -53,6 +54,8 @@ public class AuthServiceImpl implements AuthService {
                 throw new UserAlreadyExistsException("Email already exist!");
             }
             User user=createUser(signUpRequestDto);
+            Cart cart= new Cart();
+            user.setCart(cart);
             userService.save(user);
             return ResponseEntity
                     .status(HttpStatus.CREATED)

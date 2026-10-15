@@ -40,6 +40,9 @@ public class SoftDeleteRepositoryImpl<T, ID extends Serializable> extends Simple
 
     @Override
     public List<T> findAll() {
+        if (!supportsSoftDelete()) {
+            return super.findAll();
+        }
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<T> cq = baseQuery(cb);
         return em.createQuery(cq).getResultList();
@@ -47,6 +50,9 @@ public class SoftDeleteRepositoryImpl<T, ID extends Serializable> extends Simple
 
     @Override
     public List<T> findAll(Sort sort) {
+        if (!supportsSoftDelete()) {
+            return super.findAll(sort);
+        }
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<T> cq = baseQuery(cb);
         // Note: Simple sort application - for complex sorts consider delegating to super
@@ -55,6 +61,9 @@ public class SoftDeleteRepositoryImpl<T, ID extends Serializable> extends Simple
 
     @Override
     public Page<T> findAll(Pageable pageable) {
+        if (!supportsSoftDelete()) {
+            return super.findAll(pageable);
+        }
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<T> cq = baseQuery(cb);
         var query = em.createQuery(cq);
@@ -67,6 +76,9 @@ public class SoftDeleteRepositoryImpl<T, ID extends Serializable> extends Simple
 
     @Override
     public Optional<T> findById(ID id) {
+        if (!supportsSoftDelete()) {
+            return super.findById(id);
+        }
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<T> cq = cb.createQuery(entityInformation.getJavaType());
         Root<T> root = cq.from(entityInformation.getJavaType());
@@ -82,5 +94,12 @@ public class SoftDeleteRepositoryImpl<T, ID extends Serializable> extends Simple
     @Override
     public boolean existsById(ID id) {
         return findById(id).isPresent();
+    }
+    private boolean supportsSoftDelete() {
+        return em.getMetamodel()
+                .entity(entityInformation.getJavaType())
+                .getAttributes()
+                .stream()
+                .anyMatch(attribute -> attribute.getName().equals("deletedAt"));
     }
 }

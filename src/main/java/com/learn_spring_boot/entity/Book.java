@@ -5,6 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.Where;
 
 
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -23,7 +24,7 @@ public class Book extends BaseEntity {
     private Integer quantity;
     private Integer price;
     private Integer sold;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private Author author;
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -31,4 +32,6 @@ public class Book extends BaseEntity {
             joinColumns = @JoinColumn(name="book_id"),inverseJoinColumns = @JoinColumn(name="category_id")
     )
     private Set<Category> categories;
+    @OneToMany(mappedBy = "book")
+    private List<CartItem> cartItem;
 }
