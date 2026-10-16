@@ -1,7 +1,10 @@
 package com.learn_spring_boot.util;
 
+import com.learn_spring_boot.repository.UserRepository;
+import com.learn_spring_boot.security.auth.UserDetailsImpl;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 
 public final class SecurityUtils {
@@ -14,4 +17,5 @@ public final class SecurityUtils {
         if (principal instanceof UserDetails) return ((UserDetails) principal).getUsername();
         return principal.toString();
     }
+
 }

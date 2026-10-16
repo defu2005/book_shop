@@ -1,13 +1,16 @@
 package com.learn_spring_boot.service.impl;
 
+import com.learn_spring_boot.dto.OrderRequestDto;
 import com.learn_spring_boot.entity.*;
 import com.learn_spring_boot.enums.OrderStatus;
-import com.learn_spring_boot.repository.BookRepository;
-import com.learn_spring_boot.repository.OrderItemRepository;
-import com.learn_spring_boot.repository.OrderRepository;
+import com.learn_spring_boot.repository.*;
+import com.learn_spring_boot.security.auth.UserDetailsImpl;
 import com.learn_spring_boot.service.OrderService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -20,31 +23,41 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final BookRepository bookRepository;
-
+    private final UserRepository userRepository;
+    private final CartItemRepository cartItemRepository;
+    private final CartRepository cartRepository;
     @Override
     @Transactional
-    public Order createOrder(User user, List<Long> bookIds, List<Integer> quantities, String shippingAddress) {
-        if (bookIds.size() != quantities.size()) throw new IllegalArgumentException("BookIds and quantities size mismatch");
+    public Order createOrder(Authentication authentication, OrderRequestDto orderRequestDto ) {
         Order order = new Order();
+        UserDetailsImpl userDetails=(UserDetailsImpl) authentication.getPrincipal();
+        User user=userRepository.findById(userDetails.getId()).orElseThrow(()->new UsernameNotFoundException("User not found!"));
         order.setUser(user);
         order.setStatus(OrderStatus.PENDING);
-        order.setShippingAddress(shippingAddress);
+        order.setShippingAddress(orderRequestDto.shippingAddress());
         order.setOrderItems(new ArrayList<>());
-        double total = 0.0;
-        for (int i = 0; i < bookIds.size(); i++) {
-            Book book = bookRepository.findById(bookIds.get(i)).orElseThrow();
-            int qty = quantities.get(i);
+        Cart cart=cartRepository.findByUserId(user.getId());
+        orderRequestDto.books().forEach((bookId,quantity)-> {
+            Book book = bookRepository.findById(bookId).orElseThrow();
+            if(book.getQuantity()<quantity)
+            {
+                throw new AccessDeniedException("Khong du hang trong kho!");
+            }
+            double total = 0.0;
             OrderItem item = new OrderItem();
             item.setOrder(order);
             item.setBook(book);
-            item.setQuantity(qty);
+            item.setQuantity(quantity);
+
+            CartItem cartItem=cartItemRepository.findByCartIdAndBookId(cart.getId(),bookId);
+            cartItemRepository.delete(cartItem);
             double price = book.getPrice() != null ? book.getPrice().doubleValue() : 0.0;
             item.setPrice(price);
-            item.setSubtotal(price * qty);
+            item.setSubtotal(price * quantity);
             order.getOrderItems().add(item);
             total += item.getSubtotal();
-        }
-        order.setTotalAmount(total);
+            order.setTotalAmount(total);
+        });
         return orderRepository.save(order);
     }
 
@@ -52,12 +65,19 @@ public class OrderServiceImpl implements OrderService {
     public Order getOrderById(Long id) {
         return orderRepository.findById(id).orElseThrow();
     }
-
     @Override
     public List<Order> getOrdersByUser(User user) {
         return orderRepository.findAll().stream().filter(o -> o.getUser().getId().equals(user.getId())).toList();
     }
-
+    @Override
+    public List<Order> getOrdersForUser( Authentication authentication,User user) {
+        UserDetailsImpl userDetails=(UserDetailsImpl) authentication.getPrincipal();
+        User checkUser=userRepository.findById(userDetails.getId()).orElseThrow(()->new UsernameNotFoundException("User not found!"));
+        if(checkUser.getId()!=user.getId()){
+            throw new AccessDeniedException("Khong the lay orders cua user khac!");
+        }
+        return orderRepository.findAll().stream().filter(o -> o.getUser().getId().equals(user.getId())).toList();
+    }
     @Override
     public List<Order> getAllOrders() {
         return orderRepository.findAll();

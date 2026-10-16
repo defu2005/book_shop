@@ -10,6 +10,7 @@ import com.learn_spring_boot.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,10 +26,8 @@ public class OrderController {
     private final OrderMapper orderMapper;
 
     @PostMapping
-    public ResponseEntity<ApiResponseDto<OrderResponseDto>> createOrder(@RequestBody @Valid OrderRequestDto req){
-        User user = userRepository.findById(req.userId())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + req.userId()));
-        Order order = orderService.createOrder(user, req.bookIds(), req.quantities(), req.shippingAddress());
+    public ResponseEntity<ApiResponseDto<OrderResponseDto>> createOrder(Authentication authentication, @RequestBody @Valid OrderRequestDto req){
+        Order order = orderService.createOrder(authentication, req);
     return ResponseEntity.ok(ApiResponseDto.<OrderResponseDto>builder()
         .status("success")
         .message("Order created")
@@ -57,7 +56,17 @@ public class OrderController {
                 .response(dtos)
                 .build());
     }
-
+    @GetMapping("/user-order/{userId}")
+    public ResponseEntity<ApiResponseDto<List<OrderResponseDto>>> getOrdersForUser(Authentication authentication,@PathVariable Long userId){
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        List<Order> orders = orderService.getOrdersForUser(authentication,user);
+        List<OrderResponseDto> dtos = orders.stream().map(orderMapper::toDto).collect(Collectors.toList());
+        return ResponseEntity.ok(ApiResponseDto.<List<OrderResponseDto>>builder()
+                .status("success")
+                .message("Orders fetched")
+                .response(dtos)
+                .build());
+    }
     @GetMapping
     public ResponseEntity<ApiResponseDto<List<OrderResponseDto>>> getAll(){
         List<Order> orders = orderService.getAllOrders();
