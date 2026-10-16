@@ -17,6 +17,7 @@ import com.learn_spring_boot.repository.CartRepository;
 import com.learn_spring_boot.security.auth.UserDetailsImpl;
 import com.learn_spring_boot.service.CartService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 
 import org.springframework.stereotype.Service;
@@ -34,15 +35,14 @@ public class CartServiceImpl implements CartService {
     private final CartItemMapper cartItemMapper;
     private final BookMapper bookMapper;
     private final BookRepository bookRepository;
-    public Cart createCart(Authentication authentication){
+    public Cart getCartByCurrentUser(Authentication authentication){
         UserDetailsImpl userDetails=(UserDetailsImpl) authentication.getPrincipal();
         Long userId=userDetails.getId();
         return cartRepository.findByUserId(userId);
     }
     @Override
     public CartResponseDto getCart(Authentication authentication){
-
-        Cart cart= createCart( authentication);
+        Cart cart= getCartByCurrentUser( authentication);
         long totalAmount=0;
         Set<CartItem> cartItems=cart.getCartItem();
         Set<CartItemResponseDto> cartItemResponseDtos= cartItems.stream().map(cartItem -> getCartItemResponseDto(cartItem)).collect(Collectors.toSet());
@@ -52,7 +52,7 @@ public class CartServiceImpl implements CartService {
     @Override
     public CartItemResponseDto addCartItem(Authentication authentication,CartItemRequestDto cartItemRequestDto){
 
-        Cart cart= createCart( authentication);
+        Cart cart= getCartByCurrentUser( authentication);
         Book book=bookRepository.findById(cartItemRequestDto.bookId()).orElseThrow(()->new ResourceNotFoundException("Khong tim thay book id!"));
         CartItem cartItem=cartItemRepository.findByCartIdAndBookId(cart.getId(), book.getId());
         if(cartItem==null) cartItem=new CartItem();
@@ -63,8 +63,13 @@ public class CartServiceImpl implements CartService {
         return getCartItemResponseDto(cartItem);
     }
     @Override
-    public CartItemResponseDto updateCartItem(Long cartItemId,CartItemRequestDto cartItemRequestDto){
+    public CartItemResponseDto updateCartItem(Authentication authentication,Long cartItemId,CartItemRequestDto cartItemRequestDto){
+        Cart cart= getCartByCurrentUser(authentication);
         CartItem cartItem=cartItemRepository.findById(cartItemId).orElseThrow(()->  new ResourceNotFoundException("Khong tim thay cart item!"));
+        if(cart.getId()!=cartItem.getCart().getId())
+        {
+            throw new AccessDeniedException("Khong the thay doi gio hang cua user khac");
+        }
         if (cartItemRequestDto.quantity() > cartItem.getBook().getQuantity()) {
             throw new IllegalArgumentException(
                     "Số lượng yêu cầu vượt quá số lượng tồn kho. Chỉ còn "
@@ -76,8 +81,13 @@ public class CartServiceImpl implements CartService {
         return getCartItemResponseDto(cartItem);
     }
     @Override
-    public void deleteCartItem(Long cartItemId){
+    public void deleteCartItem(Authentication authentication ,Long cartItemId){
+        Cart cart= getCartByCurrentUser(authentication);
         CartItem cartItem=cartItemRepository.findById(cartItemId).orElseThrow(()->  new ResourceNotFoundException("Khong tim thay cart item!"));
+        if(cart.getId()!=cartItem.getCart().getId())
+        {
+            throw new AccessDeniedException("Khong the thay doi gio hang cua user khac");
+        }
         cartItemRepository.delete(cartItem);
     }
     public CartItemResponseDto getCartItemResponseDto(CartItem cartItem){

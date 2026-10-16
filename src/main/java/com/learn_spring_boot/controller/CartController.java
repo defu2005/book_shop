@@ -37,8 +37,8 @@ public class CartController {
                 .build());
     }
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponseDto> updateCartItem(@PathVariable Long id,@RequestBody@Valid CartItemRequestDto dto){
-        CartItemResponseDto res=cartService.updateCartItem(id, dto);
+    public ResponseEntity<ApiResponseDto> updateCartItem(Authentication authentication,@PathVariable Long id,@RequestBody@Valid CartItemRequestDto dto){
+        CartItemResponseDto res=cartService.updateCartItem(authentication,id, dto);
         return ResponseEntity.ok(ApiResponseDto.builder()
                 .status(String.valueOf(HttpStatus.OK))
                 .message("Cart Item updated!")
@@ -46,8 +46,8 @@ public class CartController {
                 .build());
     }
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponseDto> deleteCartItem(@PathVariable Long id){
-        cartService.deleteCartItem(id);
+    public ResponseEntity<ApiResponseDto> deleteCartItem(Authentication authentication,@PathVariable Long id){
+        cartService.deleteCartItem(authentication,id);
         return ResponseEntity.ok(ApiResponseDto.builder()
                 .status(String.valueOf(HttpStatus.OK))
                 .message("Cart Item deleted!")
